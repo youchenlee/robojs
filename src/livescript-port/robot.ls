@@ -1,7 +1,7 @@
 # assets
 
 class AssetsLoader
-    constructor: (@assets, @callback) ->
+    (@assets, @callback) ->
         @_resources = 0
         @_resources_loaded = 0
 
@@ -10,7 +10,7 @@ class AssetsLoader
             @assets[name] = new Image()
             @assets[name].src = uri
         for name, uri of assets
-            @assets[name].onload = () =>
+            @assets[name].onload = ~>
                 @_resources_loaded++
                 if @_resources_loaded is @_resources and typeof @callback is 'function'
                     @callback()
@@ -37,7 +37,7 @@ in_rect = (x1,y1, x2, y2, width, height) ->
 
 
 class Robot
-    constructor: (@x, @y, @source) ->
+    (@x, @y, @source) ->
         @health = 100
         @angle = Math.random()*360
         @turret_angle = Math.random()*360
@@ -46,7 +46,7 @@ class Robot
         @events = {}
 
         @worker = new Worker(source)
-        @worker.onmessage = (e) =>
+        @worker.onmessage = (e) ~>
             @receive(e.data)
 
     move: (distance) ->
@@ -95,9 +95,9 @@ class Robot
         })
 
 class Battle
-    constructor: (@ctx, @width, @height, sources) ->
+    (@ctx, @width, @height, sources) ->
         @explosions = []
-        @robots = (new Robot(Math.random()*@width, Math.random()*@height, source) for source in sources)
+        @robots = [new Robot(Math.random()*@width, Math.random()*@height, source) for source in sources]
 
         @assets = new AssetsLoader({
             "body": 'img/body.png',
@@ -131,7 +131,7 @@ class Battle
         @_update()
         @_draw()
 
-        setTimeout(=>
+        setTimeout(~>
             @_run()
         , 10)
 

@@ -1,19 +1,19 @@
 class BaseRobot
-    constructor: (@name="base-robot") ->
+    (@name = "base-robot") ->
         @event_counter = 0
         @callbacks = {}
-        self.onmessage = (e) =>
+        self.onmessage = (e) ~>
             @receive(e.data)
             
         @_run()
 
 
-    move_forwards: (distance, callback) ->
+    move_forwards: (distance, callback = null) ->
         @send({
             "action": "move_forwards",
             "amount": distance
         }, callback)
-    move_backwards: (distance, callback) ->
+    move_backwards: (distance, callback = null) ->
         @send({
             "action": "move_backwards",
             "amount": distance
@@ -42,7 +42,7 @@ class BaseRobot
                 1+1
 
     _run: ->
-        setTimeout(=>
+        setTimeout(~>
             @run()
         , 0)
     run: ->
