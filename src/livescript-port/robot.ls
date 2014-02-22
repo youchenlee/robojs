@@ -1,3 +1,7 @@
+# TODO Hit the wall detection
+# TODO Hit another bot detection
+# TODO Hit by a bullet detection
+
 # assets
 
 class AssetsLoader
@@ -60,12 +64,15 @@ class Robot
         #console.log(msg)
         event = JSON.parse(msg)
         event["progress"] = 0
-        @events["event_id"] = event
+        event_id = event["event_id"]
+        @events[event_id] = event
 
     send: (msg_obj) ->
         @worker.postMessage(JSON.stringify(msg_obj))
 
     update: ->
+        # XXX the bot will keep running until all progress reach the amount (over all the events),
+        # can we interrupt it?
         for event_id, event of @events
             if event["amount"] is event["progress"]
                 @send({

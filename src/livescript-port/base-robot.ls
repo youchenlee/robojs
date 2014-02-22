@@ -18,28 +18,33 @@ class BaseRobot
             "action": "move_backwards",
             "amount": distance
         }, callback)
-    turn_left: (angle, callback) ->
+    turn_left: (angle, callback = null) ->
         @send({
             "action": "turn_left",
             "amount": angle
         }, callback)
-    turn_right: (angle, callback) ->
+    turn_right: (angle, callback = null) ->
         @send({
             "action": "turn_right",
             "amount": angle
         }, callback)
 
 
-    receive: (msg) ->
+    receive: (msg) !->
         msg_obj = JSON.parse(msg)
 
         switch msg_obj["action"]
             when "callback"
                 if typeof @callbacks[msg_obj["event_id"]] is "function"
                     @callbacks[msg_obj["event_id"]]()
+                @event_counter--
+                # Let's try call _run here!
+                #@_run!
             when "update"
-                #@run()
-                1+1
+                # FIXME the bot want crazy at the beginning
+                if @event_counter == 0
+                    @_run!
+                    #1+1
 
     _run: ->
         setTimeout(~>

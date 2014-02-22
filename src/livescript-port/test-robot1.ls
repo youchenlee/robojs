@@ -1,10 +1,11 @@
 importScripts('base-robot.js')
 
 class TestRobot1 extends BaseRobot
+    onIdle: ->
+        @move_forwards 10
+        @turn_left 90
+        #@_run!
     run: ->
-        @move_forwards 100, ~>
-            @move_backwards 100
-            @turn_left 45, ~>
-                 @_run()
-        
+        @onIdle!
+
 tr = new TestRobot1("My first test robot")
