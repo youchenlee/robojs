@@ -1,4 +1,4 @@
-$ENABLE_DEBUG = true
+$ENABLE_DEBUG = false
 
 if !console
     console = {
