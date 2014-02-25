@@ -1,8 +1,8 @@
 # TODO Hit another bot detection
 # TODO Hit by a bullet detection
 # TODO fire and hp
-# TODO extract battle-field to an object
-# TODO multiple events tirggered at the same time
+# TODO show bot name
+
 
 $SET_TIMEOUT = 20
 
@@ -132,17 +132,17 @@ class Robot
                         event["progress"]++
                         @move(1)
                         if @status.wall-collide
-                            delete @events[event_id]
+                            @events = {}
                             @send-interruption!
-                            continue
+                            break
 
                     when "move_backwards"
                         event["progress"]++
                         @move(-1)
                         if @status.wall-collide
-                            delete @events[event_id]
+                            @events = {}
                             @send-interruption!
-                            continue
+                            break
 
                     when "turn_left"
                         event["progress"]++

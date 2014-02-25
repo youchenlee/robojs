@@ -58,12 +58,13 @@ class BaseRobot
                 logger.log @event_counter
                 # FIXME the bot went crazy at the beginning
                 # TODO the bot need to know its current position
-                @event_counter--
+
+                # clean all the event
+                @event_counter = 0
 
                 if msg_obj["status"].wall-collide
                     @onWallCollide!
-                if @event_counter == 0
-                    @_run!
+                @_run!
 
     _run: ->
         logger.log @event_counter
