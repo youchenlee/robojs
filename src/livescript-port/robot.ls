@@ -1,9 +1,13 @@
-# TODO Hit the wall detection
 # TODO Hit another bot detection
 # TODO Hit by a bullet detection
+# TODO fire and hp
+# TODO extract battle-field to an object
+# TODO multiple events tirggered at the same time
+# TODO tanks should only turn when stop moving
+
+$SET_TIMEOUT = 20
 
 # assets
-
 class AssetsLoader
     (@assets, @callback) ->
         @_resources = 0
@@ -25,7 +29,6 @@ class AssetsLoader
         @assets[asset_name]
 
 
-
 # utility functions
 degrees_to_radians = (degrees) ->
     # convert degrees to radians
@@ -41,6 +44,9 @@ in_rect = (x1,y1, x2, y2, width, height) ->
 
 
 class Robot
+    @battlefield-width = 0
+    @battlefield-height = 0
+
     (@x, @y, @source) ->
         @health = 100
         @angle = Math.random()*360
@@ -48,32 +54,62 @@ class Robot
         @radar_angle = Math.random()*360
         @bullet = null
         @events = {}
+        @status = {}
 
         @worker = new Worker(source)
         @worker.onmessage = (e) ~>
             @receive(e.data)
 
+    @set-battlefield = (width, height) ->
+        @@battlefield-width = width
+        @@battlefield-height = height
+
     move: (distance) ->
         @x += distance * Math.cos(degrees_to_radians(@angle));
         @y += distance * Math.sin(degrees_to_radians(@angle));
-        
+
+        if in_rect @x, @y, 0, 0, @@battlefield-width, @@battlefield-height
+            # hit the wall
+            logger.log \not-wall-collide
+            @status.wall-collide = false
+        else
+            logger.log \wall-collide
+            @status.wall-collide = true
+
+
     turn: (degrees) ->
         @angle += degrees
 
     receive: (msg) ->
-        #console.log(msg)
         event = JSON.parse(msg)
+        #logger.log "receive #{msg}"
+        if event.log != undefined
+            logger.log event.log
+            return
+
         event["progress"] = 0
         event_id = event["event_id"]
+        logger.log "got event " + event_id + "," +event.action
         @events[event_id] = event
 
     send: (msg_obj) ->
         @worker.postMessage(JSON.stringify(msg_obj))
 
-    update: ->
+    send-interruption: ->
+        logger.log \send-interruption
+        @send({
+            "action": "interruption",
+            "x": @x,
+            "y": @y,
+            "status": @status
+        })
+
+    update: !->
         # XXX the bot will keep running until all progress reach the amount (over all the events),
         # can we interrupt it?
+
         for event_id, event of @events
+            logger.log "events[#{event_id}] = {action=#{event.action},progress=#{event.progress}}"
             if event["amount"] is event["progress"]
                 @send({
                     "action": "callback",
@@ -85,25 +121,35 @@ class Robot
                     when "move_forwards"
                         event["progress"]++
                         @move(1)
+                        if @status.wall-collide
+                            delete @events[event_id]
+                            @send-interruption!
+                            continue
+
                     when "move_backwards"
                         event["progress"]++
                         @move(-1)
+                        if @status.wall-collide
+                            delete @events[event_id]
+                            @send-interruption!
+                            continue
+
                     when "turn_left"
                         event["progress"]++
                         @turn(-1)
+
                     when "turn_right"
                         event["progress"]++
                         @turn(1)
-
-        @send({
-            "action": "update",
-            "x": @x,
-            "y": @y
-        })
+                # end switch
+            # end if / else
+        # end for
+    # end update()
 
 class Battle
     (@ctx, @width, @height, sources) ->
         @explosions = []
+        Robot.set-battlefield @width, @height
         @robots = [new Robot(Math.random()*@width, Math.random()*@height, source) for source in sources]
 
         @assets = new AssetsLoader({
@@ -133,14 +179,15 @@ class Battle
         @send_all({
             "action": "run"
         })
-        @_run()
-    _run: ->
-        @_update()
-        @_draw()
+        @_loop!
+
+    _loop: ->
+        @_update!
+        @_draw!
 
         setTimeout(~>
-            @_run()
-        , 10)
+            @_loop!
+        , $SET_TIMEOUT)
 
     send_all: (msg_obj) ->
         for robot in @robots

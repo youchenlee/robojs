@@ -1,3 +1,5 @@
+importScripts('log.js')
+
 class BaseRobot
     (@name = "base-robot") ->
         @event_counter = 0
@@ -5,7 +7,7 @@ class BaseRobot
         self.onmessage = (e) ~>
             @receive(e.data)
             
-        @_run()
+        #@_run()
 
 
     move_forwards: (distance, callback = null) ->
@@ -34,29 +36,49 @@ class BaseRobot
         msg_obj = JSON.parse(msg)
 
         switch msg_obj["action"]
+            #the first run
+            when "run"
+                @_run!
+
+            #When finished an action
             when "callback"
+                logger.log \callback
+                logger.log @event_counter
+
+                # XXX deprecated
                 if typeof @callbacks[msg_obj["event_id"]] is "function"
                     @callbacks[msg_obj["event_id"]]()
+
                 @event_counter--
-                # Let's try call _run here!
-                #@_run!
-            when "update"
-                # FIXME the bot want crazy at the beginning
                 if @event_counter == 0
                     @_run!
-                    #1+1
+
+            when "interruption"
+                logger.log \interruption
+                logger.log @event_counter
+                # FIXME the bot went crazy at the beginning
+                # TODO the bot need to know its current position
+                @event_counter--
+
+                if msg_obj["status"].wall-collide
+                    @onWallCollide!
+                if @event_counter == 0
+                    @_run!
 
     _run: ->
+        logger.log @event_counter
         setTimeout(~>
-            @run()
+            @onIdle!
         , 0)
-    run: ->
-        throw "You need to implement the run() method"
 
-    update: ->
-        # empty, to be overidden
+    onIdle: !->
+        throw "You need to implement the onIdle() method"
+
+    onWallCollide: !->
+        throw "You need to implement the onWallCollide() method"
 
     send: (msg_obj, callback) ->
+        logger.log \send + " " + msg_obj.action
         event_id = @event_counter++
         @callbacks[event_id] = callback
         msg_obj["event_id"] = event_id
