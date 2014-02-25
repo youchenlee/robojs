@@ -3,7 +3,6 @@
 # TODO fire and hp
 # TODO extract battle-field to an object
 # TODO multiple events tirggered at the same time
-# TODO tanks should only turn when stop moving
 
 $SET_TIMEOUT = 20
 
