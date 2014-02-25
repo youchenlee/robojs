@@ -7,6 +7,9 @@
 
 $SET_TIMEOUT = 20
 
+$SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right]
+$PARALLEL_EVENTS = [\fire \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
+
 # assets
 class AssetsLoader
     (@assets, @callback) ->
@@ -50,7 +53,7 @@ class Robot
     (@x, @y, @source) ->
         @health = 100
         @angle = Math.random()*360
-        @turret_angle = Math.random()*360
+        @turret_angle = 0
         @radar_angle = Math.random()*360
         @bullet = null
         @events = {}
@@ -108,9 +111,17 @@ class Robot
         # XXX the bot will keep running until all progress reach the amount (over all the events),
         # can we interrupt it?
 
+        has_sequential_event = false
         for event_id, event of @events
+            if $SEQUENTIAL_EVENTS.indexOf event.action != -1
+                if has_sequential_event
+                    # we already have a sequential event in the queue
+                    continue
+                has_sequential_event = true
+
             logger.log "events[#{event_id}] = {action=#{event.action},progress=#{event.progress}}"
             if event["amount"] is event["progress"]
+                # the action is done
                 @send({
                     "action": "callback",
                     "event_id": event["event_id"]
